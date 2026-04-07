@@ -26,6 +26,9 @@ Thumbs.db
 test_video.mp4
 *.wav
 
+# Downloads
+downloads/
+
 # Model cache (büyük dosyalar)
 models/
 
