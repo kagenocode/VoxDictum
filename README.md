@@ -1,46 +1,46 @@
 # 🏛️ VoxDictum
 
-> *Vox (ses) + Dictum (söylenmiş söz)* — Sesi yazıya döken güç.
+> *Vox (voice) + Dictum (spoken word)* — The power that turns voice into text.
 
-OpenAI Whisper modeli kullanarak video dosyalarından otomatik SRT altyazı oluşturan bir Python uygulaması.
+A Python application that automatically generates SRT subtitles from video files using the OpenAI Whisper model.
 
-## ✨ Özellikler
+## ✨ Features
 
-- 🎙️ **Whisper AI** ile yüksek doğrulukta konuşma tanıma
-- 🌍 **99+ dil** desteği (Türkçe dahil)
-- ⚡ **faster-whisper** ile hızlı işleme (standart Whisper'dan ~4x hızlı)
-- 📊 İlerleme çubuğu ile işlem takibi
-- 🎯 VAD (Voice Activity Detection) ile sessiz kısımları otomatik atlama
-- 🖥️ **Masaüstü GUI** — YouTube URL'den video indirme ve altyazı oluşturma
-- ⬇️ **yt-dlp** ile YouTube video indirme
+- 🎙️ High-accuracy speech recognition with **Whisper AI**
+- 🌍 **99+ language** support (including Turkish)
+- ⚡ Fast processing with **faster-whisper** (~4x faster than standard Whisper)
+- 📊 Progress tracking with progress bar
+- 🎯 Automatically skip silent parts with VAD (Voice Activity Detection)
+- 🖥️ **Desktop GUI** — Download videos from YouTube URLs and generate subtitles
+- ⬇️ YouTube video downloading with **yt-dlp**
 
-## 📁 Proje Yapısı
+## 📁 Project Structure
 
 ```
 VoxDictum/
-├── main.py                        # CLI giriş noktası
-├── gui_main.py                    # GUI giriş noktası
-├── requirements.txt               # Python bağımlılıkları
+├── main.py                        # CLI entry point
+├── gui_main.py                    # GUI entry point
+├── requirements.txt               # Python dependencies
 ├── README.md
-├── subtitle_generator/            # Altyazı oluşturma paketi
+├── sub_gen/                       # Subtitle generation package
 │   ├── __init__.py
-│   ├── audio.py                   # Video → Ses çıkarma (ffmpeg)
-│   ├── transcriber.py             # Ses → Metin (Whisper)
-│   └── srt_writer.py              # Metin → SRT dosyası
-└── gui/                           # Masaüstü arayüz paketi
+│   ├── audio.py                   # Video → Audio extraction (ffmpeg)
+│   ├── transcriber.py             # Audio → Text (Whisper)
+│   └── srt_writer.py              # Text → SRT file
+└── gui/                           # Desktop interface package
     ├── __init__.py
-    ├── app.py                     # Ana pencere (PyQt5)
-    └── workers.py                 # Arka plan iş parçacıkları (QThread)
+    ├── app.py                     # Main window (PyQt5)
+    └── workers.py                 # Background workers (QThread)
 ```
 
-## 📋 Gereksinimler
+## 📋 Requirements
 
 - **Python 3.9+**
-- **ffmpeg** (video'dan ses çıkarmak için)
+- **ffmpeg** (for extracting audio from video)
 
-## 🚀 Kurulum
+## 🚀 Installation
 
-### 1. ffmpeg Kurulumu
+### 1. ffmpeg Installation
 
 ```bash
 # macOS
@@ -53,71 +53,71 @@ sudo apt install ffmpeg
 choco install ffmpeg
 ```
 
-### 2. Python Bağımlılıkları
+### 2. Python Dependencies
 
 ```bash
-# Sanal ortam oluştur (önerilir)
+# Create a virtual environment (recommended)
 python -m venv venv
 source venv/bin/activate  # macOS/Linux
 # venv\Scripts\activate   # Windows
 
-# Bağımlılıkları kur
+# Install dependencies
 pip install -r requirements.txt
 ```
 
-### 3. GPU Desteği (Opsiyonel)
+### 3. GPU Support (Optional)
 
-GPU kullanmak istiyorsanız PyTorch'u CUDA destekli kurun:
+If you want to use GPU, install PyTorch with CUDA support:
 
 ```bash
 pip install torch --index-url https://download.pytorch.org/whl/cu121
 ```
 
-## 📖 Kullanım
+## 📖 Usage
 
-### 🖥️ Masaüstü Uygulaması (GUI)
+### 🖥️ Desktop Application (GUI)
 
 ```bash
 python gui_main.py
 ```
 
-1. YouTube URL'sini metin kutusuna yapıştırın
-2. Model ve dil seçimini yapın
-3. **"⬇️ Videoyu İndir"** butonuna tıklayın
-4. İndirme tamamlanınca **"📝 Altyazı Oluştur"** butonuna tıklayın
-5. SRT dosyası indirilen videonun yanına kaydedilir
+1. Paste the YouTube URL into the text field
+2. Select the model and language
+3. Click the **"⬇️ Download Video"** button
+4. Once the download is complete, click the **"📝 Generate Subtitles"** button
+5. The SRT file will be saved next to the downloaded video
 
-### ⌨️ Komut Satırı (CLI)
+### ⌨️ Command Line (CLI)
 
-#### Temel Kullanım
+#### Basic Usage
 
 ```bash
 python main.py --input video.mp4
 ```
 
-Bu komut `video.srt` dosyasını oluşturur (Türkçe, large-v3-turbo modeli).
+This command generates a `video.srt` file (Turkish, large-v3-turbo model).
 
-### Tüm Seçenekler
+### All Options
 
 ```bash
 python main.py --input video.mp4 \
                --model large-v3-turbo \
                --language tr \
                --device auto \
-               --output altyazi.srt
+               --output subtitle.srt
 ```
 
-| Parametre    | Kısaltma | Varsayılan      | Açıklama                                       |
-|--------------|----------|-----------------|-------------------------------------------------|
-| `--input`    | `-i`     | *(zorunlu)*     | Video dosyasının yolu                           |
-| `--model`    | `-m`     | `large-v3-turbo`| Model boyutu                                    |
-| `--language` | `-l`     | `tr`            | Ses dili kodu (tr, en, de, fr, vb.)             |
-| `--device`   | `-d`     | `auto`          | Hesaplama cihazı (auto, cpu, cuda)              |
-| `--output`   | `-o`     | `<video_adı>.srt` | Çıktı dosyası yolu                            |
+| Parameter    | Shorthand | Default         | Description                                    |
+|--------------|-----------|-----------------|------------------------------------------------|
+| `--input`    | `-i`      | *(required)*    | Path to the video file                         |
+| `--model`    | `-m`      | `large-v3-turbo`| Model size                                     |
+| `--language` | `-l`      | `tr`            | Audio language code (tr, en, de, fr, etc.)     |
+| `--device`   | `-d`      | `auto`          | Compute device (auto, cpu, cuda)               |
+| `--output`   | `-o`      | `<video_name>.srt` | Output file path                            |
 
-### Model Seçenekleri
+### Model Options
 
-| Model            | Boyut   | VRAM   | Hız     | Doğruluk   |
+| Model            | Size    | VRAM   | Speed   | Accuracy   |
 |------------------|---------|--------|---------|------------|
 | `tiny`           | ~75 MB  | ~1 GB  | ⚡⚡⚡⚡⚡ | ⭐⭐         |
 | `base`           | ~140 MB | ~1 GB  | ⚡⚡⚡⚡  | ⭐⭐⭐       |
@@ -126,25 +126,25 @@ python main.py --input video.mp4 \
 | `large-v3`       | ~3 GB   | ~6 GB  | ⚡     | ⭐⭐⭐⭐⭐   |
 | `large-v3-turbo` | ~3 GB   | ~6 GB  | ⚡⚡    | ⭐⭐⭐⭐⭐   |
 
-> 💡 **Öneri:** GPU yoksa `small` veya `medium` modelini kullanın. GPU varsa `large-v3-turbo` en iyi seçenektir.
+> 💡 **Tip:** If you don't have a GPU, use the `small` or `medium` model. If you have a GPU, `large-v3-turbo` is the best option.
 
-## 📄 Çıktı Formatı (SRT)
+## 📄 Output Format (SRT)
 
 ```srt
 1
 00:00:01,500 --> 00:00:04,200
-Merhaba, bugün sizlerle güzel bir konu paylaşacağım.
+Hello, today I'm going to share a great topic with you.
 
 2
 00:00:04,800 --> 00:00:08,100
-Bu video Python ile yapay zeka hakkında.
+This video is about artificial intelligence with Python.
 ```
 
-## 🔧 Sorun Giderme
+## 🔧 Troubleshooting
 
-| Sorun | Çözüm |
-|-------|-------|
-| `ffmpeg not found` | `brew install ffmpeg` ile kurun |
-| Bellek yetersiz | Daha küçük model deneyin: `--model small` |
-| GPU kullanılmıyor | PyTorch CUDA sürümünü kurun |
-| Yanlış dil | `--language` parametresini kontrol edin |
+| Issue | Solution |
+|-------|----------|
+| `ffmpeg not found` | Install with `brew install ffmpeg` |
+| Out of memory | Try a smaller model: `--model small` |
+| GPU not being used | Install the PyTorch CUDA version |
+| Wrong language | Check the `--language` parameter |

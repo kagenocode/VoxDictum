@@ -13,7 +13,7 @@ from pathlib import Path
 import yt_dlp
 from PyQt5.QtCore import QThread, pyqtSignal
 
-from subtitle_generator import extract_audio, transcribe_audio, write_srt
+from sub_gen import extract_audio, transcribe_audio, write_srt
 
 
 class DownloadWorker(QThread):

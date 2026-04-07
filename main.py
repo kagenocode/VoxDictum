@@ -13,7 +13,7 @@ import sys
 import tempfile
 from pathlib import Path
 
-from subtitle_generator import extract_audio, transcribe_audio, write_srt
+from sub_gen import extract_audio, transcribe_audio, write_srt
 
 
 def parse_args() -> argparse.Namespace:
