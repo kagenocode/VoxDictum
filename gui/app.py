@@ -4,12 +4,10 @@ app.py — Ana GUI Penceresi (PyQt5)
 PyQt5 ile modern masaüstü arayüzü.
 """
 
-from __future__ import annotations
 
 import os
 
 from PyQt5.QtCore import Qt
-from PyQt5.QtGui import QFont, QColor, QPalette
 from PyQt5.QtWidgets import (
     QApplication, QMainWindow, QWidget,
     QVBoxLayout, QHBoxLayout,

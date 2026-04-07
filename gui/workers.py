@@ -5,7 +5,6 @@ YouTube indirme ve altyazı oluşturma işlemlerini
 QThread ile çalıştırır, böylece GUI donmaz.
 """
 
-from __future__ import annotations
 
 import os
 import tempfile
