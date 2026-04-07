@@ -7,14 +7,8 @@ Kullanım:
     python gui_main.py
 """
 
-from gui.app import App
-
-
-def main() -> None:
-    app = App()
-    app.mainloop()
+from gui.app import run
 
 
 if __name__ == "__main__":
-    main()
-
+    run()

@@ -27,13 +27,13 @@ firstAI/
 │   └── srt_writer.py              # Metin → SRT dosyası
 └── gui/                           # Masaüstü arayüz paketi
     ├── __init__.py
-    ├── app.py                     # Ana pencere (customtkinter)
-    └── workers.py                 # Arka plan iş parçacıkları
+    ├── app.py                     # Ana pencere (PyQt5)
+    └── workers.py                 # Arka plan iş parçacıkları (QThread)
 ```
 
 ## 📋 Gereksinimler
 
-- **Python 3.10+**
+- **Python 3.9+**
 - **ffmpeg** (video'dan ses çıkarmak için)
 
 ## 🚀 Kurulum

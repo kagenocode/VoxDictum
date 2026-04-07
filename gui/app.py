@@ -1,20 +1,25 @@
 """
-app.py — Ana GUI Penceresi
-===========================
-customtkinter ile modern masaüstü arayüzü.
+app.py — Ana GUI Penceresi (PyQt5)
+====================================
+PyQt5 ile modern masaüstü arayüzü.
 """
 
 from __future__ import annotations
 
 import os
-import queue
 
-import customtkinter as ctk
+from PyQt5.QtCore import Qt
+from PyQt5.QtGui import QFont, QColor, QPalette
+from PyQt5.QtWidgets import (
+    QApplication, QMainWindow, QWidget,
+    QVBoxLayout, QHBoxLayout,
+    QLabel, QLineEdit, QComboBox, QPushButton, QTextEdit,
+)
 
 from gui.workers import DownloadWorker, SubtitleWorker
 
 
-class App(ctk.CTk):
+class App(QMainWindow):
     """Video Altyazı Oluşturucu — Masaüstü Uygulaması."""
 
     MODELS = ["tiny", "base", "small", "medium", "large-v3", "large-v3-turbo"]
@@ -23,184 +28,218 @@ class App(ctk.CTk):
     def __init__(self) -> None:
         super().__init__()
 
-        # ── Pencere ayarları ──
-        self.title("🎬 Video Altyazı Oluşturucu")
-        self.geometry("800x520")
-        self.minsize(650, 450)
+        self._video_path = None
+        self._worker = None  # aktif worker referansı (GC koruması)
 
-        ctk.set_appearance_mode("dark")
-        ctk.set_default_color_theme("blue")
+        self.setWindowTitle("🎬 Video Altyazı Oluşturucu")
+        self.setMinimumSize(700, 480)
+        self.resize(840, 560)
 
-        # Durum değişkenleri
-        self._video_path: str | None = None
-        self._msg_queue: queue.Queue[str] = queue.Queue()
-        self._busy = False
-
-        # ── Arayüz ──
+        self._apply_dark_theme()
         self._build_ui()
 
-        # Kuyruktan gelen mesajları kontrol et
-        self._poll_queue()
+    # ─────────────────── Koyu Tema ───────────────────
 
-    # ─────────────────────────── UI ───────────────────────────
+    def _apply_dark_theme(self) -> None:
+        self.setStyleSheet("""
+            QMainWindow, QWidget {
+                background-color: #1e1e2e;
+                color: #cdd6f4;
+            }
+            QLabel {
+                color: #cdd6f4;
+                font-size: 14px;
+            }
+            QLabel#title {
+                color: #89b4fa;
+                font-size: 22px;
+                font-weight: bold;
+            }
+            QLineEdit, QComboBox {
+                background-color: #313244;
+                color: #cdd6f4;
+                border: 1px solid #45475a;
+                border-radius: 6px;
+                padding: 8px 12px;
+                font-size: 13px;
+            }
+            QLineEdit:focus, QComboBox:focus {
+                border: 1px solid #89b4fa;
+            }
+            QComboBox::drop-down {
+                border: none;
+                padding-right: 8px;
+            }
+            QComboBox QAbstractItemView {
+                background-color: #313244;
+                color: #cdd6f4;
+                selection-background-color: #45475a;
+            }
+            QPushButton {
+                background-color: #89b4fa;
+                color: #1e1e2e;
+                border: none;
+                border-radius: 8px;
+                padding: 10px 24px;
+                font-size: 14px;
+                font-weight: bold;
+            }
+            QPushButton:hover {
+                background-color: #74c7ec;
+            }
+            QPushButton:pressed {
+                background-color: #89dceb;
+            }
+            QPushButton:disabled {
+                background-color: #45475a;
+                color: #6c7086;
+            }
+            QTextEdit {
+                background-color: #181825;
+                color: #a6adc8;
+                border: 1px solid #313244;
+                border-radius: 8px;
+                padding: 8px;
+                font-family: "Menlo", "Courier New", monospace;
+                font-size: 12px;
+            }
+        """)
+
+    # ─────────────────── Arayüz ───────────────────
 
     def _build_ui(self) -> None:
-        # Ana çerçeve
-        self.grid_rowconfigure(4, weight=1)
-        self.grid_columnconfigure(0, weight=1)
+        central = QWidget()
+        self.setCentralWidget(central)
 
-        pad = {"padx": 16, "pady": (10, 0)}
+        layout = QVBoxLayout(central)
+        layout.setContentsMargins(20, 20, 20, 20)
+        layout.setSpacing(12)
 
         # ── Başlık ──
-        title_lbl = ctk.CTkLabel(
-            self,
-            text="🎬 Video Altyazı Oluşturucu",
-            font=ctk.CTkFont(size=22, weight="bold"),
-        )
-        title_lbl.grid(row=0, column=0, **pad, sticky="w")
+        title = QLabel("🎬 Video Altyazı Oluşturucu")
+        title.setObjectName("title")
+        layout.addWidget(title)
 
-        # ── URL Alanı ──
-        url_frame = ctk.CTkFrame(self, fg_color="transparent")
-        url_frame.grid(row=1, column=0, **pad, sticky="ew")
-        url_frame.grid_columnconfigure(1, weight=1)
+        # ── URL Satırı ──
+        url_row = QHBoxLayout()
+        url_label = QLabel("YouTube URL:")
+        self.url_input = QLineEdit()
+        self.url_input.setPlaceholderText("https://www.youtube.com/watch?v=...")
+        url_row.addWidget(url_label)
+        url_row.addWidget(self.url_input, stretch=1)
+        layout.addLayout(url_row)
 
-        ctk.CTkLabel(url_frame, text="YouTube URL:", font=ctk.CTkFont(size=14)).grid(
-            row=0, column=0, padx=(0, 8)
-        )
-        self.url_entry = ctk.CTkEntry(
-            url_frame,
-            placeholder_text="https://www.youtube.com/watch?v=...",
-            height=36,
-            font=ctk.CTkFont(size=13),
-        )
-        self.url_entry.grid(row=0, column=1, sticky="ew")
+        # ── Ayarlar Satırı ──
+        settings_row = QHBoxLayout()
 
-        # ── Ayarlar satırı ──
-        settings_frame = ctk.CTkFrame(self, fg_color="transparent")
-        settings_frame.grid(row=2, column=0, **pad, sticky="ew")
+        settings_row.addWidget(QLabel("Model:"))
+        self.model_combo = QComboBox()
+        self.model_combo.addItems(self.MODELS)
+        self.model_combo.setCurrentText("large-v3-turbo")
+        self.model_combo.setFixedWidth(180)
+        settings_row.addWidget(self.model_combo)
 
-        ctk.CTkLabel(settings_frame, text="Model:", font=ctk.CTkFont(size=13)).pack(
-            side="left", padx=(0, 4)
-        )
-        self.model_menu = ctk.CTkOptionMenu(
-            settings_frame, values=self.MODELS, width=160
-        )
-        self.model_menu.set("large-v3-turbo")
-        self.model_menu.pack(side="left", padx=(0, 16))
+        settings_row.addSpacing(16)
 
-        ctk.CTkLabel(settings_frame, text="Dil:", font=ctk.CTkFont(size=13)).pack(
-            side="left", padx=(0, 4)
-        )
-        self.lang_entry = ctk.CTkEntry(settings_frame, width=60, height=32)
-        self.lang_entry.insert(0, "tr")
-        self.lang_entry.pack(side="left", padx=(0, 16))
+        settings_row.addWidget(QLabel("Dil:"))
+        self.lang_input = QLineEdit("tr")
+        self.lang_input.setFixedWidth(60)
+        settings_row.addWidget(self.lang_input)
+
+        settings_row.addStretch()
+        layout.addLayout(settings_row)
 
         # ── Butonlar ──
-        btn_frame = ctk.CTkFrame(self, fg_color="transparent")
-        btn_frame.grid(row=3, column=0, **pad, sticky="ew")
+        btn_row = QHBoxLayout()
 
-        self.download_btn = ctk.CTkButton(
-            btn_frame,
-            text="⬇️  Videoyu İndir",
-            width=180,
-            height=40,
-            font=ctk.CTkFont(size=14, weight="bold"),
-            command=self._on_download,
-        )
-        self.download_btn.pack(side="left", padx=(0, 12))
+        self.download_btn = QPushButton("⬇️  Videoyu İndir")
+        self.download_btn.setCursor(Qt.PointingHandCursor)
+        self.download_btn.clicked.connect(self._on_download)
+        btn_row.addWidget(self.download_btn)
 
-        self.subtitle_btn = ctk.CTkButton(
-            btn_frame,
-            text="📝  Altyazı Oluştur",
-            width=180,
-            height=40,
-            font=ctk.CTkFont(size=14, weight="bold"),
-            command=self._on_subtitle,
-        )
-        self.subtitle_btn.pack(side="left")
+        self.subtitle_btn = QPushButton("📝  Altyazı Oluştur")
+        self.subtitle_btn.setCursor(Qt.PointingHandCursor)
+        self.subtitle_btn.clicked.connect(self._on_subtitle)
+        btn_row.addWidget(self.subtitle_btn)
 
-        # ── Log / Durum alanı ──
-        self.log_box = ctk.CTkTextbox(
-            self,
-            font=ctk.CTkFont(family="Menlo", size=12),
-            state="disabled",
-            wrap="word",
-        )
-        self.log_box.grid(row=4, column=0, padx=16, pady=(10, 16), sticky="nsew")
+        btn_row.addStretch()
+        layout.addLayout(btn_row)
 
-    # ─────────────────────── Mesaj kuyruğu ───────────────────────
+        # ── Log Alanı ──
+        self.log_box = QTextEdit()
+        self.log_box.setReadOnly(True)
+        layout.addWidget(self.log_box, stretch=1)
 
-    def _poll_queue(self) -> None:
-        """Arka plan thread'lerinden gelen log mesajlarını GUI'ye yazar."""
-        while not self._msg_queue.empty():
-            msg = self._msg_queue.get_nowait()
-            self._append_log(msg)
-        self.after(100, self._poll_queue)
-
-    def _log(self, msg: str) -> None:
-        """Thread-safe log fonksiyonu."""
-        self._msg_queue.put(msg)
+    # ─────────────────── Log ───────────────────
 
     def _append_log(self, msg: str) -> None:
-        self.log_box.configure(state="normal")
-        self.log_box.insert("end", msg + "\n")
-        self.log_box.see("end")
-        self.log_box.configure(state="disabled")
+        self.log_box.append(msg)
 
-    # ─────────────────────── Buton eylemleri ───────────────────────
+    # ─────────────────── Busy State ───────────────────
 
     def _set_busy(self, busy: bool) -> None:
-        self._busy = busy
-        state = "disabled" if busy else "normal"
-        self.download_btn.configure(state=state)
-        self.subtitle_btn.configure(state=state)
+        self.download_btn.setDisabled(busy)
+        self.subtitle_btn.setDisabled(busy)
+
+    # ─────────────────── Download ───────────────────
 
     def _on_download(self) -> None:
-        url = self.url_entry.get().strip()
+        url = self.url_input.text().strip()
         if not url:
             self._append_log("⚠️  Lütfen bir YouTube URL'si girin.")
-            return
-        if self._busy:
             return
 
         self._set_busy(True)
         self._append_log(f"🔗 URL: {url}")
 
-        def done(path: str | None, error: str | None) -> None:
-            if path:
-                self._video_path = path
-            self.after(0, lambda: self._set_busy(False))
-
-        worker = DownloadWorker(
-            url=url,
-            output_dir=self.DOWNLOADS_DIR,
-            log_callback=self._log,
-            done_callback=done,
-        )
+        worker = DownloadWorker(url=url, output_dir=self.DOWNLOADS_DIR)
+        worker.log.connect(self._append_log)
+        worker.finished.connect(self._on_download_done)
+        worker.error.connect(self._on_worker_error)
+        self._worker = worker
         worker.start()
+
+    def _on_download_done(self, path: str) -> None:
+        self._video_path = path
+        self._set_busy(False)
+
+    # ─────────────────── Subtitle ───────────────────
 
     def _on_subtitle(self) -> None:
         if not self._video_path:
             self._append_log("⚠️  Önce bir video indirin.")
             return
-        if self._busy:
-            return
+
+        model = self.model_combo.currentText()
+        lang = self.lang_input.text().strip() or "tr"
 
         self._set_busy(True)
-        model = self.model_menu.get()
-        lang = self.lang_entry.get().strip() or "tr"
-
         self._append_log(f"📝 Altyazı oluşturuluyor... (model: {model}, dil: {lang})")
-
-        def done(path: str | None, error: str | None) -> None:
-            self.after(0, lambda: self._set_busy(False))
 
         worker = SubtitleWorker(
             video_path=self._video_path,
             model_size=model,
             language=lang,
-            log_callback=self._log,
-            done_callback=done,
         )
+        worker.log.connect(self._append_log)
+        worker.finished.connect(self._on_subtitle_done)
+        worker.error.connect(self._on_worker_error)
+        self._worker = worker
         worker.start()
 
+    def _on_subtitle_done(self, path: str) -> None:
+        self._set_busy(False)
+
+    # ─────────────────── Error ───────────────────
+
+    def _on_worker_error(self, msg: str) -> None:
+        self._set_busy(False)
+
+
+def run() -> None:
+    """Uygulamayı başlatır."""
+    import sys
+    app = QApplication(sys.argv)
+    window = App()
+    window.show()
+    sys.exit(app.exec_())
