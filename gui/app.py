@@ -18,7 +18,7 @@ from gui.workers import DownloadWorker, SubtitleWorker
 
 
 class App(QMainWindow):
-    """Video Altyazı Oluşturucu — Masaüstü Uygulaması."""
+    """VoxDictum — Masaüstü Uygulaması."""
 
     MODELS = ["tiny", "base", "small", "medium", "large-v3", "large-v3-turbo"]
     DOWNLOADS_DIR = os.path.join(os.path.dirname(os.path.dirname(__file__)), "downloads")
@@ -29,7 +29,7 @@ class App(QMainWindow):
         self._video_path = None
         self._worker = None  # aktif worker referansı (GC koruması)
 
-        self.setWindowTitle("🎬 Video Altyazı Oluşturucu")
+        self.setWindowTitle("🏛️ VoxDictum")
         self.setMinimumSize(700, 480)
         self.resize(840, 560)
 
@@ -114,7 +114,7 @@ class App(QMainWindow):
         layout.setSpacing(12)
 
         # ── Başlık ──
-        title = QLabel("🎬 Video Altyazı Oluşturucu")
+        title = QLabel("🏛️ VoxDictum")
         title.setObjectName("title")
         layout.addWidget(title)
 

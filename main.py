@@ -1,6 +1,6 @@
 """
-Video Altyazı Oluşturucu — CLI Giriş Noktası
-==============================================
+VoxDictum — CLI Giriş Noktası
+===============================
 Kullanım:
     python main.py --input video.mp4
     python main.py --input video.mp4 --model large-v3-turbo --language tr
@@ -19,7 +19,7 @@ from subtitle_generator import extract_audio, transcribe_audio, write_srt
 def parse_args() -> argparse.Namespace:
     """Komut satırı argümanlarını ayrıştırır."""
     parser = argparse.ArgumentParser(
-        description="🎬 Video Altyazı Oluşturucu — Whisper ile otomatik altyazı",
+        description="🏛️ VoxDictum — Whisper ile otomatik altyazı",
         formatter_class=argparse.RawDescriptionHelpFormatter,
         epilog="""
 Örnekler:
@@ -71,7 +71,7 @@ def main() -> None:
 
     # ── Başlık ──
     print("=" * 50)
-    print("🎬 Video Altyazı Oluşturucu")
+    print("🏛️ VoxDictum")
     print("=" * 50)
     print(f"   Video  : {args.input}")
     print(f"   Model  : {args.model}")
