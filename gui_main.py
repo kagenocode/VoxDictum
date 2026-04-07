@@ -1,9 +1,9 @@
 """
-GUI Giriş Noktası
+GUI Entry Point
 ==================
-Masaüstü uygulamasını başlatır.
+Starts the desktop application.
 
-Kullanım:
+Usage:
     python gui_main.py
 """
 

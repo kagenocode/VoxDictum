@@ -1,16 +1,16 @@
 """
-srt_writer.py — SRT Dosyası Oluşturma Modülü
+srt_writer.py — SRT File Generation Module
 =============================================
-Transkripsiyon segment'lerini standart SRT altyazı formatına çevirir.
+Converts transcription segments into standard SRT subtitle format.
 
-SRT Formatı:
+SRT Format:
     1
     00:00:01,500 --> 00:00:04,200
-    Merhaba dünya.
+    Hello world.
 
     2
     00:00:05,000 --> 00:00:08,300
-    Bu bir altyazı örneğidir.
+    This is a subtitle example.
 """
 
 from __future__ import annotations
@@ -18,13 +18,13 @@ from __future__ import annotations
 
 def _format_timestamp(seconds: float) -> str:
     """
-    Saniyeyi SRT zaman damgası formatına çevirir.
+    Converts seconds to SRT timestamp format.
 
     Args:
-        seconds: Zaman değeri (saniye cinsinden).
+        seconds: Time value (in seconds).
 
     Returns:
-        "HH:MM:SS,mmm" formatında string.
+        String in "HH:MM:SS,mmm" format.
     """
     hours = int(seconds // 3600)
     minutes = int((seconds % 3600) // 60)
@@ -35,11 +35,11 @@ def _format_timestamp(seconds: float) -> str:
 
 def write_srt(segments: list[dict], output_path: str) -> None:
     """
-    Segment listesinden SRT altyazı dosyası oluşturur.
+    Creates an SRT subtitle file from a segment list.
 
     Args:
-        segments:    Her biri {"start", "end", "text"} içeren sözlük listesi.
-        output_path: Çıktı .srt dosyasının yolu.
+        segments:    List of dictionaries each containing {"start", "end", "text"}.
+        output_path: Path to the output .srt file.
     """
     with open(output_path, "w", encoding="utf-8") as f:
         for i, seg in enumerate(segments, start=1):
@@ -50,5 +50,4 @@ def write_srt(segments: list[dict], output_path: str) -> None:
             f.write(f"{seg['text']}\n")
             f.write("\n")
 
-    print(f"💾 Altyazı dosyası kaydedildi: {output_path}")
-
+    print(f"💾 Subtitle file saved: {output_path}")

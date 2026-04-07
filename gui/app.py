@@ -1,7 +1,7 @@
 """
-app.py — Ana GUI Penceresi (PyQt5)
+app.py — Main GUI Window (PyQt5)
 ====================================
-PyQt5 ile modern masaüstü arayüzü.
+Modern desktop interface with PyQt5.
 """
 
 
@@ -18,7 +18,7 @@ from gui.workers import DownloadWorker, SubtitleWorker
 
 
 class App(QMainWindow):
-    """VoxDictum — Masaüstü Uygulaması."""
+    """VoxDictum — Desktop Application."""
 
     MODELS = ["tiny", "base", "small", "medium", "large-v3", "large-v3-turbo"]
     DOWNLOADS_DIR = os.path.join(os.path.dirname(os.path.dirname(__file__)), "downloads")
@@ -27,7 +27,7 @@ class App(QMainWindow):
         super().__init__()
 
         self._video_path = None
-        self._worker = None  # aktif worker referansı (GC koruması)
+        self._worker = None  # active worker reference (GC protection)
 
         self.setWindowTitle("🏛️ VoxDictum")
         self.setMinimumSize(700, 480)
@@ -36,7 +36,7 @@ class App(QMainWindow):
         self._apply_dark_theme()
         self._build_ui()
 
-    # ─────────────────── Koyu Tema ───────────────────
+    # ─────────────────── Dark Theme ───────────────────
 
     def _apply_dark_theme(self) -> None:
         self.setStyleSheet("""
@@ -103,7 +103,7 @@ class App(QMainWindow):
             }
         """)
 
-    # ─────────────────── Arayüz ───────────────────
+    # ─────────────────── Interface ───────────────────
 
     def _build_ui(self) -> None:
         central = QWidget()
@@ -113,12 +113,12 @@ class App(QMainWindow):
         layout.setContentsMargins(20, 20, 20, 20)
         layout.setSpacing(12)
 
-        # ── Başlık ──
+        # ── Title ──
         title = QLabel("🏛️ VoxDictum")
         title.setObjectName("title")
         layout.addWidget(title)
 
-        # ── URL Satırı ──
+        # ── URL Row ──
         url_row = QHBoxLayout()
         url_label = QLabel("YouTube URL:")
         self.url_input = QLineEdit()
@@ -127,7 +127,7 @@ class App(QMainWindow):
         url_row.addWidget(self.url_input, stretch=1)
         layout.addLayout(url_row)
 
-        # ── Ayarlar Satırı ──
+        # ── Settings Row ──
         settings_row = QHBoxLayout()
 
         settings_row.addWidget(QLabel("Model:"))
@@ -139,7 +139,7 @@ class App(QMainWindow):
 
         settings_row.addSpacing(16)
 
-        settings_row.addWidget(QLabel("Dil:"))
+        settings_row.addWidget(QLabel("Language:"))
         self.lang_input = QLineEdit("tr")
         self.lang_input.setFixedWidth(60)
         settings_row.addWidget(self.lang_input)
@@ -147,15 +147,15 @@ class App(QMainWindow):
         settings_row.addStretch()
         layout.addLayout(settings_row)
 
-        # ── Butonlar ──
+        # ── Buttons ──
         btn_row = QHBoxLayout()
 
-        self.download_btn = QPushButton("⬇️  Videoyu İndir")
+        self.download_btn = QPushButton("⬇️  Download Video")
         self.download_btn.setCursor(Qt.PointingHandCursor)
         self.download_btn.clicked.connect(self._on_download)
         btn_row.addWidget(self.download_btn)
 
-        self.subtitle_btn = QPushButton("📝  Altyazı Oluştur")
+        self.subtitle_btn = QPushButton("📝  Generate Subtitles")
         self.subtitle_btn.setCursor(Qt.PointingHandCursor)
         self.subtitle_btn.clicked.connect(self._on_subtitle)
         btn_row.addWidget(self.subtitle_btn)
@@ -163,7 +163,7 @@ class App(QMainWindow):
         btn_row.addStretch()
         layout.addLayout(btn_row)
 
-        # ── Log Alanı ──
+        # ── Log Area ──
         self.log_box = QTextEdit()
         self.log_box.setReadOnly(True)
         layout.addWidget(self.log_box, stretch=1)
@@ -184,7 +184,7 @@ class App(QMainWindow):
     def _on_download(self) -> None:
         url = self.url_input.text().strip()
         if not url:
-            self._append_log("⚠️  Lütfen bir YouTube URL'si girin.")
+            self._append_log("⚠️  Please enter a YouTube URL.")
             return
 
         self._set_busy(True)
@@ -205,14 +205,14 @@ class App(QMainWindow):
 
     def _on_subtitle(self) -> None:
         if not self._video_path:
-            self._append_log("⚠️  Önce bir video indirin.")
+            self._append_log("⚠️  Please download a video first.")
             return
 
         model = self.model_combo.currentText()
         lang = self.lang_input.text().strip() or "tr"
 
         self._set_busy(True)
-        self._append_log(f"📝 Altyazı oluşturuluyor... (model: {model}, dil: {lang})")
+        self._append_log(f"📝 Generating subtitles... (model: {model}, language: {lang})")
 
         worker = SubtitleWorker(
             video_path=self._video_path,
@@ -235,7 +235,7 @@ class App(QMainWindow):
 
 
 def run() -> None:
-    """Uygulamayı başlatır."""
+    """Starts the application."""
     import sys
     app = QApplication(sys.argv)
     window = App()

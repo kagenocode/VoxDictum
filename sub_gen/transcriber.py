@@ -1,8 +1,8 @@
 """
-transcriber.py — Whisper Konuşma Tanıma Modülü
+transcriber.py — Whisper Speech Recognition Module
 ===============================================
-faster-whisper kütüphanesi ile ses dosyasını metne çevirir.
-Her segment için başlangıç/bitiş zamanı ve metin döndürür.
+Transcribes audio files to text using the faster-whisper library.
+Returns start/end timestamps and text for each segment.
 """
 
 from __future__ import annotations
@@ -12,7 +12,7 @@ from tqdm import tqdm
 
 
 def _detect_device() -> str:
-    """Kullanılabilir en iyi hesaplama cihazını tespit eder."""
+    """Detects the best available compute device."""
     try:
         import torch
         return "cuda" if torch.cuda.is_available() else "cpu"
@@ -27,32 +27,32 @@ def transcribe_audio(
     language: str = "tr",
 ) -> list[dict]:
     """
-    Ses dosyasını Whisper modeli ile metne çevirir.
+    Transcribes an audio file to text using the Whisper model.
 
     Args:
-        audio_path:  Giriş ses dosyasının yolu (.wav).
-        model_size:  Whisper model boyutu
+        audio_path:  Path to the input audio file (.wav).
+        model_size:  Whisper model size
                      (tiny | base | small | medium | large-v3 | large-v3-turbo).
-        device:      Hesaplama cihazı (auto | cpu | cuda).
-        language:    Ses dili kodu (tr, en, de, …).
+        device:      Compute device (auto | cpu | cuda).
+        language:    Audio language code (tr, en, de, …).
 
     Returns:
-        Her biri {"start", "end", "text"} anahtarlarını içeren sözlük listesi.
+        List of dictionaries each containing {"start", "end", "text"} keys.
     """
 
-    # ── Cihaz & hesaplama tipi ──
+    # ── Device & compute type ──
     if device == "auto":
         device = _detect_device()
 
     compute_type = "float16" if device == "cuda" else "int8"
 
-    print(f"🤖 Model yükleniyor: {model_size} (cihaz: {device}, hesaplama: {compute_type})")
-    print("   İlk çalıştırmada model indirilir (~3 GB), bu biraz zaman alabilir...")
+    print(f"🤖 Loading model: {model_size} (device: {device}, compute: {compute_type})")
+    print("   On the first run, the model will be downloaded (~3 GB), this may take a while...")
 
     model = WhisperModel(model_size, device=device, compute_type=compute_type)
 
-    # ── Transkripsiyon ──
-    print(f"🎙️  Konuşma tanıma başlıyor (dil: {language})...")
+    # ── Transcription ──
+    print(f"🎙️  Starting speech recognition (language: {language})...")
 
     segments_gen, info = model.transcribe(
         audio_path,
@@ -63,17 +63,17 @@ def transcribe_audio(
         ),
     )
 
-    print(f"📊 Tespit edilen dil: {info.language} "
-          f"(olasılık: {info.language_probability:.2%})")
-    print(f"⏱️  Toplam süre: {info.duration:.1f} saniye")
+    print(f"📊 Detected language: {info.language} "
+          f"(probability: {info.language_probability:.2%})")
+    print(f"⏱️  Total duration: {info.duration:.1f} seconds")
 
-    # ── Segment'leri topla (ilerleme çubuğu ile) ──
+    # ── Collect segments (with progress bar) ──
     segments: list[dict] = []
 
     with tqdm(
         total=info.duration,
         unit="s",
-        desc="📝 İşleniyor",
+        desc="📝 Processing",
         bar_format="{l_bar}{bar}| {n:.1f}/{total:.1f}s",
     ) as pbar:
         last_end = 0.0
@@ -86,6 +86,5 @@ def transcribe_audio(
             pbar.update(segment.end - last_end)
             last_end = segment.end
 
-    print(f"✅ {len(segments)} altyazı segmenti oluşturuldu.")
+    print(f"✅ {len(segments)} subtitle segments generated.")
     return segments
-

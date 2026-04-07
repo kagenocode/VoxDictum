@@ -1,5 +1,5 @@
 """
-gui paketi
+gui package
 ==========
-VoxDictum için masaüstü arayüzü.
+Desktop interface for VoxDictum.
 """

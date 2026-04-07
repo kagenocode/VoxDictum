@@ -1,10 +1,10 @@
 """
-VoxDictum — CLI Giriş Noktası
+VoxDictum — CLI Entry Point
 ===============================
-Kullanım:
+Usage:
     python main.py --input video.mp4
     python main.py --input video.mp4 --model large-v3-turbo --language tr
-    python main.py --input video.mp4 --model large-v3 --device cpu --output altyazi.srt
+    python main.py --input video.mp4 --model large-v3 --device cpu --output subtitle.srt
 """
 
 import argparse
@@ -17,12 +17,12 @@ from sub_gen import extract_audio, transcribe_audio, write_srt
 
 
 def parse_args() -> argparse.Namespace:
-    """Komut satırı argümanlarını ayrıştırır."""
+    """Parses command line arguments."""
     parser = argparse.ArgumentParser(
-        description="🏛️ VoxDictum — Whisper ile otomatik altyazı",
+        description="🏛️ VoxDictum — Automatic subtitles with Whisper",
         formatter_class=argparse.RawDescriptionHelpFormatter,
         epilog="""
-Örnekler:
+Examples:
   python main.py --input video.mp4
   python main.py --input video.mp4 --model large-v3 --language en
   python main.py --input video.mp4 --model large-v3-turbo --device cpu
@@ -31,29 +31,29 @@ def parse_args() -> argparse.Namespace:
     parser.add_argument(
         "--input", "-i",
         required=True,
-        help="Video dosyasının yolu (mp4, mkv, avi, vb.)",
+        help="Path to the video file (mp4, mkv, avi, etc.)",
     )
     parser.add_argument(
         "--model", "-m",
         default="large-v3-turbo",
         choices=["tiny", "base", "small", "medium", "large-v3", "large-v3-turbo"],
-        help="Whisper model boyutu (varsayılan: large-v3-turbo)",
+        help="Whisper model size (default: large-v3-turbo)",
     )
     parser.add_argument(
         "--language", "-l",
         default="tr",
-        help="Ses dili kodu, ör: tr, en, de (varsayılan: tr)",
+        help="Audio language code, e.g.: tr, en, de (default: tr)",
     )
     parser.add_argument(
         "--device", "-d",
         default="auto",
         choices=["auto", "cpu", "cuda"],
-        help="Hesaplama cihazı (varsayılan: auto — GPU varsa kullanır)",
+        help="Compute device (default: auto — uses GPU if available)",
     )
     parser.add_argument(
         "--output", "-o",
         default=None,
-        help="Çıktı SRT dosyasının yolu (varsayılan: <video_adı>.srt)",
+        help="Output SRT file path (default: <video_name>.srt)",
     )
     return parser.parse_args()
 
@@ -61,34 +61,34 @@ def parse_args() -> argparse.Namespace:
 def main() -> None:
     args = parse_args()
 
-    # ── Girdi dosyası kontrolü ──
+    # ── Input file check ──
     if not os.path.isfile(args.input):
-        print(f"❌ Dosya bulunamadı: {args.input}")
+        print(f"❌ File not found: {args.input}")
         sys.exit(1)
 
-    # ── Çıktı dosya adını belirle ──
+    # ── Determine output file name ──
     output_path = args.output or f"{Path(args.input).stem}.srt"
 
-    # ── Başlık ──
+    # ── Header ──
     print("=" * 50)
     print("🏛️ VoxDictum")
     print("=" * 50)
-    print(f"   Video  : {args.input}")
-    print(f"   Model  : {args.model}")
-    print(f"   Dil    : {args.language}")
-    print(f"   Cihaz  : {args.device}")
-    print(f"   Çıktı  : {output_path}")
+    print(f"   Video    : {args.input}")
+    print(f"   Model    : {args.model}")
+    print(f"   Language : {args.language}")
+    print(f"   Device   : {args.device}")
+    print(f"   Output   : {output_path}")
     print("=" * 50)
 
-    # ── Geçici ses dosyası ──
+    # ── Temporary audio file ──
     with tempfile.NamedTemporaryFile(suffix=".wav", delete=False) as tmp:
         audio_path = tmp.name
 
     try:
-        # 1️⃣  Video → Ses
+        # 1️⃣  Video → Audio
         extract_audio(args.input, audio_path)
 
-        # 2️⃣  Ses → Metin (segment'ler)
+        # 2️⃣  Audio → Text (segments)
         segments = transcribe_audio(
             audio_path,
             model_size=args.model,
@@ -96,19 +96,19 @@ def main() -> None:
             language=args.language,
         )
 
-        # 3️⃣  Segment'ler → SRT
+        # 3️⃣  Segments → SRT
         if segments:
             write_srt(segments, output_path)
         else:
-            print("⚠️  Hiç konuşma tespit edilemedi!")
+            print("⚠️  No speech detected!")
 
     finally:
-        # Geçici dosyayı temizle
+        # Clean up temporary file
         if os.path.exists(audio_path):
             os.unlink(audio_path)
-            print("🧹 Geçici dosyalar temizlendi.")
+            print("🧹 Temporary files cleaned up.")
 
-    print("\n🎉 İşlem tamamlandı!")
+    print("\n🎉 Process complete!")
 
 
 if __name__ == "__main__":

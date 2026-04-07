@@ -1,8 +1,8 @@
 """
-audio.py — Video'dan Ses Çıkarma Modülü
+audio.py — Audio Extraction Module
 ========================================
-ffmpeg kullanarak video dosyasından 16kHz mono WAV ses dosyası çıkarır.
-Bu format Whisper modelinin beklediği giriş formatıdır.
+Extracts a 16kHz mono WAV audio file from a video using ffmpeg.
+This is the input format expected by the Whisper model.
 """
 
 import sys
@@ -12,16 +12,16 @@ import ffmpeg
 
 def extract_audio(video_path: str, audio_path: str) -> None:
     """
-    Video dosyasından ses çıkarır ve WAV formatında kaydeder.
+    Extracts audio from a video file and saves it in WAV format.
 
     Args:
-        video_path: Kaynak video dosyasının yolu.
-        audio_path: Çıktı ses dosyasının yolu (.wav).
+        video_path: Path to the source video file.
+        audio_path: Path to the output audio file (.wav).
 
     Raises:
-        SystemExit: ffmpeg hatası oluşursa program sonlanır.
+        SystemExit: Terminates the program if an ffmpeg error occurs.
     """
-    print(f"🎬 Ses çıkarılıyor: {video_path}")
+    print(f"🎬 Extracting audio: {video_path}")
 
     try:
         (
@@ -29,19 +29,18 @@ def extract_audio(video_path: str, audio_path: str) -> None:
             .input(video_path)
             .output(
                 audio_path,
-                ac=1,            # Mono kanal
-                ar=16000,        # 16kHz örnekleme hızı (Whisper standardı)
+                ac=1,            # Mono channel
+                ar=16000,        # 16kHz sample rate (Whisper standard)
                 format="wav",
             )
             .overwrite_output()
             .run(quiet=True)
         )
     except ffmpeg.Error:
-        print("❌ ffmpeg hatası! Olası sebepler:")
-        print("   1. ffmpeg kurulu değil → brew install ffmpeg")
-        print("   2. Video dosyası bozuk veya desteklenmiyor")
-        print(f"   3. Dosya bulunamadı → {video_path}")
+        print("❌ ffmpeg error! Possible causes:")
+        print("   1. ffmpeg is not installed → brew install ffmpeg")
+        print("   2. Video file is corrupted or unsupported")
+        print(f"   3. File not found → {video_path}")
         sys.exit(1)
 
-    print(f"✅ Ses çıkarıldı: {audio_path}")
-
+    print(f"✅ Audio extracted: {audio_path}")

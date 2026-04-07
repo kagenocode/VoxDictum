@@ -1,12 +1,12 @@
 """
-sub_gen paketi
+sub_gen package
 =========================
-Video dosyalarından otomatik SRT altyazı oluşturur.
+Automatically generates SRT subtitles from video files.
 
-Modüller:
-    - audio       : Video'dan ses çıkarma
-    - transcriber : Whisper ile konuşma tanıma
-    - srt_writer  : SRT dosyası oluşturma
+Modules:
+    - audio       : Extract audio from video
+    - transcriber : Speech recognition with Whisper
+    - srt_writer  : Generate SRT files
 """
 
 from sub_gen.audio import extract_audio
@@ -14,4 +14,3 @@ from sub_gen.transcriber import transcribe_audio
 from sub_gen.srt_writer import write_srt
 
 __all__ = ["extract_audio", "transcribe_audio", "write_srt"]
-

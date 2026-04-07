@@ -1,8 +1,8 @@
 """
-workers.py — Arka Plan İş Parçacıkları (PyQt5)
+workers.py — Background Workers (PyQt5)
 ================================================
-YouTube indirme ve altyazı oluşturma işlemlerini
-QThread ile çalıştırır, böylece GUI donmaz.
+Runs YouTube downloading and subtitle generation tasks
+with QThread so the GUI doesn't freeze.
 """
 
 
@@ -17,10 +17,10 @@ from sub_gen import extract_audio, transcribe_audio, write_srt
 
 
 class DownloadWorker(QThread):
-    """YouTube videosunu indirir."""
+    """Downloads a YouTube video."""
 
     log = pyqtSignal(str)
-    finished = pyqtSignal(str)       # indirilen dosya yolu
+    finished = pyqtSignal(str)       # downloaded file path
     error = pyqtSignal(str)
 
     def __init__(self, url: str, output_dir: str) -> None:
@@ -31,7 +31,7 @@ class DownloadWorker(QThread):
     def run(self) -> None:
         try:
             os.makedirs(self.output_dir, exist_ok=True)
-            self.log.emit("⬇️  Video indiriliyor...")
+            self.log.emit("⬇️  Downloading video...")
 
             downloaded_file = None
 
@@ -43,7 +43,7 @@ class DownloadWorker(QThread):
                     self.log.emit(f"   {pct}  {speed}")
                 elif d["status"] == "finished":
                     downloaded_file = d.get("filename")
-                    self.log.emit("✅ İndirme tamamlandı, dönüştürülüyor...")
+                    self.log.emit("✅ Download complete, converting...")
 
             ydl_opts = {
                 "format": "bestvideo[ext=mp4]+bestaudio[ext=m4a]/best[ext=mp4]/best",
@@ -59,19 +59,19 @@ class DownloadWorker(QThread):
                 if not downloaded_file:
                     downloaded_file = ydl.prepare_filename(info)
 
-            self.log.emit(f"✅ Video kaydedildi: {downloaded_file}")
+            self.log.emit(f"✅ Video saved: {downloaded_file}")
             self.finished.emit(downloaded_file)
 
         except Exception as e:
-            self.log.emit(f"❌ İndirme hatası: {e}")
+            self.log.emit(f"❌ Download error: {e}")
             self.error.emit(str(e))
 
 
 class SubtitleWorker(QThread):
-    """Video dosyasından altyazı oluşturur."""
+    """Generates subtitles from a video file."""
 
     log = pyqtSignal(str)
-    finished = pyqtSignal(str)       # SRT dosya yolu
+    finished = pyqtSignal(str)       # SRT file path
     error = pyqtSignal(str)
 
     def __init__(self, video_path: str, model_size: str, language: str) -> None:
@@ -86,13 +86,13 @@ class SubtitleWorker(QThread):
             with tempfile.NamedTemporaryFile(suffix=".wav", delete=False) as tmp:
                 audio_path = tmp.name
 
-            # 1) Video → Ses
-            self.log.emit("🎬 Ses çıkarılıyor...")
+            # 1) Video → Audio
+            self.log.emit("🎬 Extracting audio...")
             extract_audio(self.video_path, audio_path)
-            self.log.emit("✅ Ses çıkarıldı.")
+            self.log.emit("✅ Audio extracted.")
 
-            # 2) Ses → Metin
-            self.log.emit(f"🤖 Model yükleniyor: {self.model_size} ...")
+            # 2) Audio → Text
+            self.log.emit(f"🤖 Loading model: {self.model_size} ...")
             segments = transcribe_audio(
                 audio_path,
                 model_size=self.model_size,
@@ -100,18 +100,18 @@ class SubtitleWorker(QThread):
                 language=self.language,
             )
 
-            # 3) Segment → SRT
+            # 3) Segments → SRT
             if segments:
                 srt_path = str(Path(self.video_path).with_suffix(".srt"))
                 write_srt(segments, srt_path)
-                self.log.emit(f"💾 Altyazı kaydedildi: {srt_path}")
+                self.log.emit(f"💾 Subtitles saved: {srt_path}")
                 self.finished.emit(srt_path)
             else:
-                self.log.emit("⚠️  Hiç konuşma tespit edilemedi!")
-                self.error.emit("Konuşma tespit edilemedi.")
+                self.log.emit("⚠️  No speech detected!")
+                self.error.emit("No speech detected.")
 
         except Exception as e:
-            self.log.emit(f"❌ Altyazı hatası: {e}")
+            self.log.emit(f"❌ Subtitle error: {e}")
             self.error.emit(str(e))
 
         finally:
